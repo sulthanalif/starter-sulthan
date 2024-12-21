@@ -33,6 +33,8 @@ new class extends Component {
 
 
     //option
+    public string $nameRole;
+    public string $namePermission;
     public $role_selected_id;
     public Collection|array $permissionsMultiSearchable = [];
     public array $permission_multi_searchable_ids = [];
@@ -42,7 +44,7 @@ new class extends Component {
         if ($id != 0) {
             $role = Role::find($id);
             $this->permission_multi_searchable_ids = $role->permissions->pluck('id')->toArray();
-            $this->permissionsMultiSearchable = Permission::all();
+            $this->permissionsMultiSearchable = Permission::orderBy('name')->get();
         } else {
             $this->permission_multi_searchable_ids = [];
             $this->permissionsMultiSearchable = [];
@@ -52,7 +54,7 @@ new class extends Component {
 
     public function resetInput(): void
     {
-        $this->reset(['id', 'name', 'email', 'password', 'role', 'role_selected_id', 'permissionsMultiSearchable', 'permission_multi_searchable_ids']);
+        $this->reset(['id', 'name', 'email', 'password', 'role', 'role_selected_id', 'permissionsMultiSearchable', 'permission_multi_searchable_ids', 'nameRole', 'namePermission']);
     }
 
     public function option(): void
@@ -150,20 +152,41 @@ new class extends Component {
     public function saveRole(): void
     {
         $this->validate([
-            'name' => 'required|string',
+            'nameRole' => 'required|string',
         ]);
 
         try {
             DB::beginTransaction();
-            Role::create(['name' => $this->name]);
+            Role::create(['name' => $this->nameRole]);
             DB::commit();
             $this->success('Role created.', position: 'toast-bottom');
             // $this->drawer = false;
+            $this->resetInput();
             $this->roles = Role::all();
         } catch (\Throwable $th) {
             DB::rollBack();
+            $this->resetInput();
             $this->warning("Will create role", $th->getMessage(), position: 'toast-bottom');
-            // $this->drawer = false;
+        }
+    }
+
+    public function savePermission(): void
+    {
+        $this->validate([
+            'namePermission' => 'required|string',
+        ]);
+
+        try {
+            DB::beginTransaction();
+            Permission::create(['name' => $this->namePermission]);
+            DB::commit();
+            $this->success('Permission created.', position: 'toast-bottom');
+            $this->resetInput();
+            $this->permissions = Permission::all();
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            $this->resetInput();
+            $this->warning("Will create permission", $th->getMessage(), position: 'toast-bottom');
         }
     }
 
@@ -277,7 +300,9 @@ new class extends Component {
             @can('user-create')
             <x-button label="Tambah" @click="$wire.create" responsive icon="o-plus" />
             @endcan
+            @can('option-role')
             <x-button label="Pengaturan" @click="$wire.option" responsive icon="o-cog-6-tooth" />
+            @endcan
         </x-slot:actions>
     </x-header>
 

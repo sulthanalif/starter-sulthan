@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
         $userCreatePermission = \Spatie\Permission\Models\Permission::create(['name' => 'user-create']);
         $userEditPermission = \Spatie\Permission\Models\Permission::create(['name' => 'user-edit']);
         $userDeletePermission = \Spatie\Permission\Models\Permission::create(['name' => 'user-delete']);
+        $optionRolePermission = \Spatie\Permission\Models\Permission::create(['name' => 'option-role']);
 
         // Assign permissions to roles
         $superAdminRole->givePermissionTo([
@@ -32,7 +33,9 @@ class DatabaseSeeder extends Seeder
             $userCreatePermission,
             $userEditPermission,
             $userDeletePermission,
+            $optionRolePermission
         ]);
+
         $adminRole->givePermissionTo([
             $dashboardPermission, $userPagePermission, $userCreatePermission
         ]);

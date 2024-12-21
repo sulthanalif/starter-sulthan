@@ -20,11 +20,12 @@ new class extends Component {
     public ?\Illuminate\Http\UploadedFile $image = null;
     public string $oldImage = '';
     public string $name = '';
+    public string $email = '';
     public string $address = '';
     public $phone = '';
 
     //email variables
-    public string $email = '';
+    public string $newEmail = '';
 
     //password variables
     public string $oldPassword = '';
@@ -35,9 +36,9 @@ new class extends Component {
     {
         $user = Auth::user();
 
-        $this->oldImage = $user->image ?? null; // Pastikan properti `image` ada di User
+        $this->oldImage = $user->image ?? 'images/empty-image.png'; // Pastikan properti `image` ada di User
         $this->name = $user->name ?? '';
-        // $this->email = $user->email ?? '';
+        $this->email = $user->email ?? '';
         $this->address = $user->address ?? '';
         $this->phone = $user->phone ?? '';
     }
@@ -131,21 +132,23 @@ new class extends Component {
     </x-header>
 
     <x-card>
-        <x-tabs wire:model="selectedTab" >
+        <x-tabs wire:model="selectedTab">
             <x-tab name="profile-tab" label="Profil" icon="o-user">
                 <div class="mt-4">
                     <x-form wire:submit="save">
-                        <div class="flex flex-wrap">
+                        <div class="flex flex-wrap gap-4">
                             <div class="w-full lg:w-1/3 flex justify-center">
                                 <x-file wire:model="image" accept="image/png, image/jpeg, image/jpg, image/webp"
                                     crop-after-change change-text="Change" crop-text="Crop" crop-title-text="Crop image"
                                     crop-cancel-text="Cancel" crop-save-text="Crop" :crop-config="$config">
-                                    <img src="{{ asset('storage/'.$oldImage) ?? '/storage/images/empty-image.png' }}"
+                                    <img src="{{ asset('storage/'.$oldImage) }}"
                                         class="h-40 rounded-lg" />
                                 </x-file>
                             </div>
                             <div class="w-full lg:w-1/2">
                                 <x-input label="Name" icon="o-user" type="text" wire:model="name" inline />
+                                <div class="my-3"></div>
+                                <x-input label="Email" icon="o-user" type="email" wire:model="email" inline readonly />
                                 <div class="my-3"></div>
                                 <x-input label="Phone" icon="o-phone" type="number" wire:model="phone" inline />
                                 <div class="my-3"></div>

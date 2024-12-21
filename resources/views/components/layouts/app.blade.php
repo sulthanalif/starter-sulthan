@@ -33,22 +33,34 @@
         <x-slot:sidebar drawer="main-drawer" collapsible class="bg-base-100 lg:bg-inherit">
 
         {{-- BRAND --}}
-        <x-app-brand class="p-5 pt-3" />
+        <div class="flex justify-center">
+            <x-app-brand class=" px-5 pt-5" />
+        </div>
+        {{-- <img src="{{ asset('storage/'.$user->image) }}" class="w-12 rounded-full" /> --}}
 
         {{-- MENU --}}
         <x-menu activate-by-route>
 
             {{-- User --}}
-                <x-menu-separator />
+                {{-- <x-menu-separator /> --}}
 
-                <x-list-item :item="$user" value="name" sub-value="email" no-separator no-hover class="-mx-2 !-my-2 rounded">
+                <x-list-item :item="$user" value="name" sub-value="email" no-separator no-hover class="bg-base-100 rounded px-5">
+                    <x-slot:avatar>
+                        @if (!$user->image)
+                        <img src="{{ asset('storage/images/empty-image.png') }}"
+                        class="w-10 rounded-lg" />
+                        @else
+                        <img src="{{ asset('storage/'.$user->image) }}"
+                        class="w-10 rounded-lg" />
+                        @endif
+                    </x-slot:avatar>
                     <x-slot:actions>
                         <x-dropdown>
                             <x-slot:trigger>
-                                <x-button icon="o-ellipsis-vertical"/>
+                                <x-icon name="o-ellipsis-vertical" class="cursor-pointer"/>
                             </x-slot:trigger>
 
-                            <x-menu-item title="Profile" icon="o-user-circle"  no-wire-navigate link="{{ route('profile') }}" />
+                            <x-menu-item title="Profile" icon="o-user-circle"  link="{{ route('profile') }}" />
                             <x-menu-item title="Logout" icon="o-power"  no-wire-navigate link="{{ route('logout') }}" />
                         </x-dropdown>
                     </x-slot:actions>

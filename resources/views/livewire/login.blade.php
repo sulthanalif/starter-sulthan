@@ -24,11 +24,14 @@ new class extends Component {
 }; ?>
 
 <div class="flex items-center justify-center min-h-screen">
-    <div class="relative">
-        <div class="rounded-lg shadow">
-            <div class="font-bold text-2xl text-center">
-                Login
+    <div class="w-full max-w-md">
+        <div class="rounded-lg shadow p-6 bg-base-100">
+            <div class="flex w-full justify-center">
+                <x-app-brand class="mb-4" />
             </div>
+            {{-- <div class="font-bold text-2xl text-center">
+                Login
+            </div> --}}
             <div class="mt-4">
                 <x-form wire:submit="save" no-separator>
                     <x-input label="Email" icon="o-user" type="email" wire:model="email" inline autofocus />
