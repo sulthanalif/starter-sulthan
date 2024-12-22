@@ -85,6 +85,10 @@ new class extends Component {
 
     public function saveEmail()
     {
+        $this->validate([
+            'newEmail' => 'required|email|unique:users,email',
+        ]);
+
         $this->warning('Belum seting Email.', position: 'toast-bottom');
         $this->reset(['email']);
     }
@@ -168,7 +172,7 @@ new class extends Component {
                     <x-form wire:submit="saveEmail">
                         <div class="flex flex-wrap justify-center">
                             <div class="w-full lg:w-1/2">
-                                <x-input label="Masukan Email Baru" icon="o-envelope" type="email" wire:model="email" />
+                                <x-input label="Masukan Email Baru" icon="o-envelope" type="email" wire:model="newEmail" />
                             </div>
                         </div>
                         <x-slot:actions>
