@@ -7,6 +7,8 @@ use Livewire\WithPagination;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Role;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Permission;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -14,13 +16,9 @@ new class extends Component {
     use Toast, WithPagination;
 
     public string $search = '';
-
     public bool $drawer = false;
-
     public bool $myModal = false;
-
     public int $perPage = 5;
-
     public array $sortBy = ['column' => 'name', 'direction' => 'asc'];
 
     //var user
@@ -216,7 +214,7 @@ new class extends Component {
                 $this->success('User updated.', position: 'toast-bottom');
                 $this->myModal = false;
             } catch (\Throwable $th) {
-                $this->warning("Will update #$id", $th->getMessage(), position: 'toast-bottom');
+                $this->warning("Error update user", $th->getMessage(), position: 'toast-bottom');
                 DB::rollBack();
                 $this->myModal = false;
             }
@@ -276,7 +274,7 @@ new class extends Component {
                         $query->where('name', 'like', "%{$this->search}%");
                     });
             })
-            ->where('id', '!=', auth()->id())
+            ->where('id', '!=', Auth::id())
             ->orderBy($this->sortBy['column'], $this->sortBy['direction'])
             ->paginate($this->perPage);
     }

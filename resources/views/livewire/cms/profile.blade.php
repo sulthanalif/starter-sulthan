@@ -3,7 +3,9 @@
 use Mary\Traits\Toast;
 use Livewire\Volt\Component;
 use Livewire\WithFileUploads;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 
 new class extends Component {
@@ -36,7 +38,7 @@ new class extends Component {
     {
         $user = Auth::user();
 
-        $this->oldImage = $user->image ?? 'images/empty-image.png'; // Pastikan properti `image` ada di User
+        $this->oldImage = $user->image == null ? 'img/user-avatar.png' : 'storage/'.$user->image; // Pastikan properti `image` ada di User
         $this->name = $user->name ?? '';
         $this->email = $user->email ?? '';
         $this->address = $user->address ?? '';
@@ -55,9 +57,9 @@ new class extends Component {
             'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048', // Validasi file gambar
         ]);
 
-        $user = Auth::user();
 
         try {
+            $user = Auth::user();
             DB::beginTransaction();
 
             if ($this->image) {
@@ -145,7 +147,7 @@ new class extends Component {
                                 <x-file wire:model="image" accept="image/png, image/jpeg, image/jpg, image/webp"
                                     crop-after-change change-text="Change" crop-text="Crop" crop-title-text="Crop image"
                                     crop-cancel-text="Cancel" crop-save-text="Crop" :crop-config="$config">
-                                    <img src="{{ asset('storage/'.$oldImage) }}"
+                                    <img src="{{ asset($oldImage) }}"
                                         class="h-40 rounded-lg" />
                                 </x-file>
                             </div>

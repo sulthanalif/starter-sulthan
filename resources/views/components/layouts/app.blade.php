@@ -36,7 +36,6 @@
         <div class="flex justify-center">
             <x-app-brand class=" px-5 pt-5" />
         </div>
-        {{-- <img src="{{ asset('storage/'.$user->image) }}" class="w-12 rounded-full" /> --}}
 
         {{-- MENU --}}
         <x-menu activate-by-route>
@@ -47,7 +46,7 @@
                 <x-list-item :item="$user" value="name" sub-value="email" no-separator no-hover class="bg-base-100 rounded px-5">
                     <x-slot:avatar>
                         @if (!$user->image)
-                        <img src="{{ asset('storage/images/empty-image.png') }}"
+                        <img src="{{ asset('img/user-avatar.png') }}"
                         class="w-10 rounded-lg" />
                         @else
                         <img src="{{ asset('storage/'.$user->image) }}"

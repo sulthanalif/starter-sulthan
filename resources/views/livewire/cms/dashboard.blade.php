@@ -17,17 +17,11 @@ new class extends Component {
         </x-slot:actions> --}}
     </x-header>
 
-    <div class="py-4 bg-base-100 rounded-b-xl bg-base-200 grid md:grid-cols-4 gap-5">
-        {{-- <x-stat title="Messages" value="44" icon="o-envelope" tooltip="Hello" />
-
-        <x-stat title="Sales" description="This month" value="22.124" icon="o-arrow-trending-up" tooltip-bottom="There" />
-
-        <x-stat title="Lost" description="This month" value="34" icon="o-arrow-trending-down"
-            tooltip-left="Ops!" />
-
-        <x-stat title="Sales" description="This month" value="22.124" icon="o-arrow-trending-down"
-            class="text-orange-500" color="text-pink-500" tooltip-right="Gosh!" /> --}}
-
+    <div class="py-4 rounded-b-xl grid md:grid-cols-4 gap-5">
+        <x-stat title="Messages" value="44" icon="o-envelope" />
+        <x-stat title="Messages" value="44" icon="o-envelope" />
+        <x-stat title="Messages" value="44" icon="o-envelope" />
+        <x-stat title="Messages" value="44" icon="o-envelope" />
     </div>
     <x-card>
         <div class="text-center">
