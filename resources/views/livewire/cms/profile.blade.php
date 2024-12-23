@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\User;
 use Mary\Traits\Toast;
 use Livewire\Volt\Component;
 use Livewire\WithFileUploads;
@@ -7,9 +8,10 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use App\Traits\Traits\HandlesSaveOrUpdate;
 
 new class extends Component {
-    use Toast, WithFileUploads;
+    use Toast, WithFileUploads, HandlesSaveOrUpdate;
 
     public string $selectedTab = 'profile-tab';
 
@@ -32,13 +34,18 @@ new class extends Component {
     //password variables
     public string $oldPassword = '';
     public string $newPassword = '';
-    public string $confirmPassword  = '';
+    public string $confirmPassword = '';
 
     public function mount(): void
     {
         $user = Auth::user();
+        $this->setModel(new User());
+        $this->setRecordId($user->id);
 
-        $this->oldImage = $user->image == null ? 'img/user-avatar.png' : 'storage/'.$user->image; // Pastikan properti `image` ada di User
+        // dd($user->id);
+
+
+        $this->oldImage = $user->image == null ? 'img/user-avatar.png' : 'storage/' . $user->image; // Pastikan properti `image` ada di User
         $this->name = $user->name ?? '';
         $this->email = $user->email ?? '';
         $this->address = $user->address ?? '';
@@ -48,41 +55,24 @@ new class extends Component {
     //profile
     public function save(): void
     {
-        // dd($this->phone);
-        $this->validate([
-            'name' => 'required|string|max:255',
-            // 'email' => 'required|email|max:255',
-            'address' => 'nullable|string|max:500',
-            'phone' => 'nullable|string|max:20',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048', // Validasi file gambar
-        ]);
+        $this->saveOrUpdate(
+            validationRules: [
+                'name' => 'required|string|max:255',
+                'address' => 'nullable|string|max:500',
+                'phone' => 'nullable|string|max:20',
+                'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048', // Validasi file gambar
+            ],
 
-
-        try {
-            $user = Auth::user();
-            DB::beginTransaction();
-
-            if ($this->image) {
-                if ($user->image) {
-                    $this->deleteImage($user->image);
+            beforeSave: function ($user, $component) {
+                if ($component->image) {
+                    if ($user->image) {
+                        $component->deleteImage($user->image);
+                    }
+                    $path = $component->uploadImage($component->image, 'users');
+                    $user->image = $path;
                 }
-                $user->image = $this->uploadImage($this->image);
-            }
-
-            $user->name = $this->name;
-            // $user->email = $this->email;
-            $user->address = $this->address;
-            $user->phone = $this->phone;
-
-            $user->save();
-
-            DB::commit();
-
-            $this->success('Profile updated.', position: 'toast-bottom');
-        } catch (\Throwable $th) {
-            DB::rollBack();
-            $this->warning('Will update profile', $th->getMessage(), position: 'toast-bottom');
-        }
+            },
+        );
     }
 
     public function saveEmail()
@@ -97,39 +87,30 @@ new class extends Component {
 
     public function savePassword(): void
     {
-        $this->validate([
-            'oldPassword' => 'required|string|min:6',
-            'newPassword' => 'required|string|min:6',
-            'confirmPassword' => 'required|string|min:6|same:newPassword',
-        ]);
-
-        if (Hash::check($this->oldPassword, Auth::user()->password)) {
-            try {
-                DB::beginTransaction();
-                $user = Auth::user();
-                $user->password = Hash::make($this->newPassword);
-                $user->save();
-                DB::commit();
-                $this->success('Password updated.', position: 'toast-bottom');
-                $this->reset(['oldPassword', 'newPassword', 'confirmPassword']);
-            } catch (\Throwable $th) {
-                DB::rollBack();
-                $this->warning('Will update password', $th->getMessage(), position: 'toast-bottom');
+        $this->saveOrUpdate(
+            validationRules: [
+                'oldPassword' => 'required|string|min:6',
+                'newPassword' => 'required|string|min:6',
+                'confirmPassword' => 'required|string|min:6|same:newPassword',
+            ],
+            beforeSave: function ($user, $component) {
+                if (Hash::check($component->oldPassword, $user->password)) {
+                    if ($component->newPassword == $component->confirmPassword) {
+                        $user->password = Hash::make($component->newPassword);
+                    } else {
+                        $component->addError('confirmPassword', 'Password confirmation does not match.');
+                    }
+                } else {
+                    $component->addError('oldPassword', 'Old password is incorrect.');
+                }
+            },
+            afterSave: function ($user, $component) {
+                $component->reset(['oldPassword', 'newPassword', 'confirmPassword']);
             }
-        } else {
-            $this->addError('oldPassword', 'Old password is incorrect.');
-        }
+        );
     }
 
-    private function uploadImage($image): string
-    {
-        return $image->store('images/users', 'public');
-    }
 
-    private function deleteImage($image): void
-    {
-        Storage::disk('public')->delete($image);
-    }
 }; ?>
 
 <div>
@@ -147,14 +128,14 @@ new class extends Component {
                                 <x-file wire:model="image" accept="image/png, image/jpeg, image/jpg, image/webp"
                                     crop-after-change change-text="Change" crop-text="Crop" crop-title-text="Crop image"
                                     crop-cancel-text="Cancel" crop-save-text="Crop" :crop-config="$config">
-                                    <img src="{{ asset($oldImage) }}"
-                                        class="h-40 rounded-lg" />
+                                    <img src="{{ asset($oldImage) }}" class="h-40 rounded-lg" />
                                 </x-file>
                             </div>
                             <div class="w-full lg:w-1/2">
                                 <x-input label="Name" icon="o-user" type="text" wire:model="name" inline />
                                 <div class="my-3"></div>
-                                <x-input label="Email" icon="o-user" type="email" wire:model="email" inline readonly />
+                                <x-input label="Email" icon="o-user" type="email" wire:model="email" inline
+                                    readonly />
                                 <div class="my-3"></div>
                                 <x-input label="Phone" icon="o-phone" type="number" wire:model="phone" inline />
                                 <div class="my-3"></div>
@@ -174,7 +155,8 @@ new class extends Component {
                     <x-form wire:submit="saveEmail">
                         <div class="flex flex-wrap justify-center">
                             <div class="w-full lg:w-1/2">
-                                <x-input label="Masukan Email Baru" icon="o-envelope" type="email" wire:model="newEmail" />
+                                <x-input label="Masukan Email Baru" icon="o-envelope" type="email"
+                                    wire:model="newEmail" />
                             </div>
                         </div>
                         <x-slot:actions>
@@ -204,4 +186,3 @@ new class extends Component {
         </x-tabs>
     </x-card>
 </div>
-

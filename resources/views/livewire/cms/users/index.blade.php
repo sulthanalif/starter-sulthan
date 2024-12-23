@@ -4,22 +4,18 @@ use App\Models\User;
 use Mary\Traits\Toast;
 use Livewire\Volt\Component;
 use Livewire\WithPagination;
+use App\Traits\Traits\HandlesPage;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Models\Permission;
+use App\Traits\Traits\HandlesSaveOrUpdate;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 new class extends Component {
-    use Toast, WithPagination;
-
-    public string $search = '';
-    public bool $drawer = false;
-    public bool $myModal = false;
-    public int $perPage = 5;
-    public array $sortBy = ['column' => 'name', 'direction' => 'asc'];
+    use Toast, WithPagination, HandlesPage, HandlesSaveOrUpdate;
 
     //var user
     public $id;
@@ -29,13 +25,20 @@ new class extends Component {
     public string $role = '';
     public $roles = [];
 
-
     //option
     public string $nameRole;
     public string $namePermission;
     public $role_selected_id;
     public Collection|array $permissionsMultiSearchable = [];
     public array $permission_multi_searchable_ids = [];
+
+    public function mount(): void
+    {
+        $this->setModel(new User());
+        $this->setInput(['id', 'name', 'email', 'password', 'role', 'role_selected_id', 'permissionsMultiSearchable', 'permission_multi_searchable_ids', 'nameRole', 'namePermission']);
+        $this->resetInput();
+        $this->roles = Role::all();
+    }
 
     public function selectedRole($id): void
     {
@@ -47,12 +50,6 @@ new class extends Component {
             $this->permission_multi_searchable_ids = [];
             $this->permissionsMultiSearchable = [];
         }
-
-    }
-
-    public function resetInput(): void
-    {
-        $this->reset(['id', 'name', 'email', 'password', 'role', 'role_selected_id', 'permissionsMultiSearchable', 'permission_multi_searchable_ids', 'nameRole', 'namePermission']);
     }
 
     public function option(): void
@@ -66,7 +63,7 @@ new class extends Component {
     public function searchMulti(string $value): void
     {
         $selectedOptions = collect($this->permission_multi_searchable_ids)
-            ->map(fn (int $id) => Permission::where('id', $id)->first())
+            ->map(fn(int $id) => Permission::where('id', $id)->first())
             ->filter()
             ->values();
 
@@ -78,53 +75,7 @@ new class extends Component {
             ->merge($selectedOptions);
     }
 
-    public function create(): void
-    {
-        $this->resetInput();
-        $this->myModal = true;
-
-        $this->roles = Role::all();
-        $this->reset(['id', 'name', 'email', 'password', 'role']);
-    }
-
-    public function edit($id): void
-    {
-        $this->myModal = true;
-
-        $user = User::find($id);
-
-        $this->id = $user->id;
-        $this->name = $user->name;
-        $this->email = $user->email;
-        $this->role = $user->roles->first()->id;
-        $this->roles = Role::all();
-        // dd($this->roles-);
-    }
-
-    // Clear filters
-    public function clear(): void
-    {
-        $this->reset();
-        $this->success('Filters cleared.', position: 'toast-bottom');
-    }
-
-    // Delete action
-    public function delete($id): void
-    {
-        try {
-            DB::beginTransaction();
-            User::find($id)->delete();
-            DB::commit();
-
-            $this->success('User deleted.', position: 'toast-bottom');
-        } catch (\Throwable $th) {
-            DB::rollBack();
-            $this->warning("Will delete #$id", $th->getMessage(), position: 'toast-bottom');
-        }
-    }
-
     //save option
-
     public function saveOption(): void
     {
         $this->validate([
@@ -141,7 +92,7 @@ new class extends Component {
             $this->drawer = false;
         } catch (\Throwable $th) {
             DB::rollBack();
-            $this->warning("Will update role", $th->getMessage(), position: 'toast-bottom');
+            $this->warning('Will update role', $th->getMessage(), position: 'toast-bottom');
             $this->drawer = false;
         }
     }
@@ -164,7 +115,7 @@ new class extends Component {
         } catch (\Throwable $th) {
             DB::rollBack();
             $this->resetInput();
-            $this->warning("Will create role", $th->getMessage(), position: 'toast-bottom');
+            $this->warning('Will create role', $th->getMessage(), position: 'toast-bottom');
         }
     }
 
@@ -184,76 +135,35 @@ new class extends Component {
         } catch (\Throwable $th) {
             DB::rollBack();
             $this->resetInput();
-            $this->warning("Will create permission", $th->getMessage(), position: 'toast-bottom');
+            $this->warning('Will create permission', $th->getMessage(), position: 'toast-bottom');
         }
     }
 
     // Save action
     public function save(): void
     {
-        if ($this->id != null) {
-            $this->validate([
+        $this->saveOrUpdate(
+            validationRules: [
                 'name' => 'required|string',
-                'email' => 'required|unique:users,email,' . $this->id,
-                'password' => 'nullable',
+                'email' => 'required|unique:users,email,' . $this->recordId,
+                'password' => $this->recordId ? 'nullable' : 'required',
                 'role' => 'required',
-            ]);
-
-            $user = User::find($this->id);
-            try {
-                DB::beginTransaction();
-                $user->name = $this->name;
-                $user->email = $this->email;
-                $user->roles()->sync($this->role);
-                if ($this->password) {
-                    $user->password = Hash::make($this->password);
+            ],
+            beforeSave: function ($user, $component) {
+                if ($component->password) {
+                    $user->password = Hash::make($component->password);
                 }
-                $user->save();
-                DB::commit();
-
-                $this->success('User updated.', position: 'toast-bottom');
-                $this->myModal = false;
-            } catch (\Throwable $th) {
-                $this->warning("Error update user", $th->getMessage(), position: 'toast-bottom');
-                DB::rollBack();
-                $this->myModal = false;
-            }
-        } else {
-            $this->validate([
-                'name' => 'required|string',
-                'email' => 'required|unique:users,email',
-                'password' => 'required',
-                'role' => 'required',
-            ]);
-
-            try {
-                DB::beginTransaction();
-                $user = User::create([
-                    'name' => $this->name,
-                    'email' => $this->email,
-                    'password' => Hash::make($this->password),
-                ]);
-                $user->roles()->sync($this->role);
-                DB::commit();
-
-                $this->success('User created.', position: 'toast-bottom');
-                $this->myModal = false;
-            } catch (\Throwable $th) {
-                $this->warning('Will create user', $th->getMessage(), position: 'toast-bottom');
-                DB::rollBack();
-                $this->myModal = false;
-            }
-        }
+            },
+            afterSave: function ($user, $component) {
+                $user->roles()->sync($component->role);
+            },
+        );
     }
 
     // Table headers
     public function headers(): array
     {
-        return [
-            ['key' => 'id', 'label' => '#', 'class' => 'w-1'],
-            ['key' => 'name', 'label' => 'Nama', 'class' => 'w-64'],
-            ['key' => 'roles.0.name', 'label' => 'Role', 'class' => 'w-40', 'sortable' => false],
-            ['key' => 'email', 'label' => 'E-mail']];
+        return [['key' => 'id', 'label' => '#', 'class' => 'w-1'], ['key' => 'name', 'label' => 'Nama', 'class' => 'w-64'], ['key' => 'roles.0.name', 'label' => 'Role', 'class' => 'w-40', 'sortable' => false], ['key' => 'email', 'label' => 'E-mail']];
     }
 
     /**
@@ -296,10 +206,10 @@ new class extends Component {
         </x-slot:middle>
         <x-slot:actions>
             @can('user-create')
-            <x-button label="Tambah" @click="$wire.create" responsive icon="o-plus" />
+                <x-button label="Tambah" @click="$wire.create" responsive icon="o-plus" />
             @endcan
             @can('option-role')
-            <x-button label="Pengaturan" @click="$wire.option" responsive icon="o-cog-6-tooth" />
+                <x-button label="Pengaturan" @click="$wire.option" responsive icon="o-cog-6-tooth" />
             @endcan
         </x-slot:actions>
     </x-header>
@@ -318,11 +228,11 @@ new class extends Component {
             @scope('actions', $user)
                 <div class="flex">
                     @can('user-edit')
-                    <x-button icon="o-pencil" wire:click="edit({{ $user['id'] }})" class="btn-ghost btn-sm" />
+                        <x-button icon="o-pencil" wire:click="edit({{ $user['id'] }})" class="btn-ghost btn-sm" />
                     @endcan
                     @can('user-delete')
-                    <x-button icon="o-trash" wire:click="delete({{ $user['id'] }})" wire:confirm="Are you sure?" spinner
-                    class="btn-ghost btn-sm text-red-500" />
+                        <x-button icon="o-trash" wire:click="delete({{ $user['id'] }})" wire:confirm="Are you sure?" spinner
+                            class="btn-ghost btn-sm text-red-500" />
                     @endcan
                 </div>
             @endscope
