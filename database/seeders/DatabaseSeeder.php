@@ -42,6 +42,12 @@ class DatabaseSeeder extends Seeder
 
         // Create users
         User::factory()->create(['name' => 'Super Admin', 'email' => 'superadmin@example.com', 'password' => Hash::make('password')])->assignRole($superAdminRole);
-        User::factory()->create(['name' => 'Admin', 'email' => 'admin@example.com', 'password' => Hash::make('password')])->assignRole($adminRole);
+        User::factory(10)->create()->each(function ($user, $index) use ($adminRole) {
+            $user->name = "Admin $index";
+            $user->email = "admin$index@example.com";
+            $user->password = Hash::make('password');
+            $user->save();
+            $user->assignRole($adminRole);
+        });
     }
 }

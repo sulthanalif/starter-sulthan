@@ -163,7 +163,12 @@ new class extends Component {
     // Table headers
     public function headers(): array
     {
-        return [['key' => 'id', 'label' => '#', 'class' => 'w-1'], ['key' => 'name', 'label' => 'Nama', 'class' => 'w-64'], ['key' => 'roles.0.name', 'label' => 'Role', 'class' => 'w-40', 'sortable' => false], ['key' => 'email', 'label' => 'E-mail']];
+        return [
+            // ['key' => 'id', 'label' => `<x-checkbox wire:model.live="checkbox" />`, 'class' => 'w-1', 'sortable' => false],
+            ['key' => 'name', 'label' => 'Nama', 'class' => 'w-64'],
+            ['key' => 'roles.0.name', 'label' => 'Role', 'class' => 'w-40', 'sortable' => false],
+            ['key' => 'email', 'label' => 'E-mail']
+        ];
     }
 
     /**
@@ -196,6 +201,7 @@ new class extends Component {
             'headers' => $this->headers(),
         ];
     }
+
 }; ?>
 
 <div>
@@ -216,33 +222,39 @@ new class extends Component {
 
     <!-- TABLE  -->
     <x-card>
-        <x-table :headers="$headers" :rows="$users" :sort-by="$sortBy" per-page="perPage" :per-page-values="[5, 10, 50]"
+        <x-table
+            :headers="$headers"
+            :rows="$users"
+            :sort-by="$sortBy"
+            per-page="perPage"
+            :per-page-values="[5, 10, 50]"
+            wire:model.live="selected"
+            selectable
             with-pagination>
-            @scope('cell_id', $user)
-                {{ ($this->users()->currentPage() - 1) * $this->perPage + $loop->iteration }}
-            @endscope
-            @scope('cell_roles.0.name', $user)
-                <x-badge :value="$user['roles'][0]['name']"
-                    class="{{ $user['roles'][0]['name'] == 'super-admin' ? 'badge-warning' : 'badge-primary' }}" />
-            @endscope
-            @scope('actions', $user)
-                <div class="flex">
-                    @can('user-edit')
-                        <x-button icon="o-pencil" wire:click="edit({{ $user['id'] }})" class="btn-ghost btn-sm" />
-                    @endcan
-                    @can('user-delete')
-                        <x-button icon="o-trash" wire:click="delete({{ $user['id'] }})" wire:confirm="Are you sure?" spinner
-                            class="btn-ghost btn-sm text-red-500" />
-                    @endcan
+
+                @scope('cell_roles.0.name', $user)
+                    <x-badge :value="$user['roles'][0]['name']"
+                        class="{{ $user['roles'][0]['name'] == 'super-admin' ? 'badge-warning' : 'badge-primary' }}" />
+                @endscope
+                @scope('actions', $user)
+                    <div class="flex">
+                        @can('user-edit')
+                            <x-button icon="o-pencil" wire:click="edit({{ $user['id'] }})" class="btn-ghost btn-sm" />
+                        @endcan
+                    </div>
+                @endscope
+            </x-table>
+            @can('user-delete')
+                @if ($this->selected)
+                <div class="mt-2">
+                    <x-button label="Hapus" icon="o-trash" wire:click="delete" spinner class="btn-ghost  text-red-500" wire:confirm="Are you sure?" wire:loading.attr="disabled" />
                 </div>
-            @endscope
-        </x-table>
+                @endif
+            @endcan
     </x-card>
 
     <!-- DRAWER -->
     @include('livewire.cms.users.drawer')
-
-
 
     {{-- modal --}}
     @include('livewire.cms.users.modal')

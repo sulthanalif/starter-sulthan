@@ -12,6 +12,7 @@ trait HandlesPage
     public int $perPage = 5;
     public array $sortBy = ['column' => 'name', 'direction' => 'asc'];
     public array $input = [];
+    public array $selected = [];
 
     public function setInput($input): void
     {
@@ -29,6 +30,8 @@ trait HandlesPage
         $this->myModal = true;
     }
 
+
+
     public function edit($id): void
     {
         $this->setRecordId($id); // Simpan ID record untuk update
@@ -44,14 +47,14 @@ trait HandlesPage
     }
 
     // Delete action
-    public function delete($id): void
+    public function delete(): void
     {
         try {
             DB::beginTransaction();
-            $this->model::find($id)->delete();
+            $this->model::whereIn('id', $this->selected)->delete();
             DB::commit();
 
-            $this->success('Deleted.', position: 'toast-bottom');
+            $this->success('Deleted success.', position: 'toast-bottom');
         } catch (\Throwable $th) {
             DB::rollBack();
             $this->warning("Will delete #$id", $th->getMessage(), position: 'toast-bottom');

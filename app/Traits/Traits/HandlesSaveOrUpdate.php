@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Storage;
 
 trait HandlesSaveOrUpdate
 {
-    public $recordId = null; // ID untuk update (null jika create)
+    public $recordId = null;
     public $model;
 
     public function setModel($model): void
@@ -34,9 +34,8 @@ trait HandlesSaveOrUpdate
                     throw new \Exception("Record not found");
                 }
 
-                // Jalankan callback sebelum menyimpan
                 if ($beforeSave) {
-                    $beforeSave($record, $this); // Callback menerima model dan komponen
+                    $beforeSave($record, $this);
                 }
 
 
@@ -45,7 +44,6 @@ trait HandlesSaveOrUpdate
             } else {
                 $record = new $this->model;
 
-                // Jalankan callback sebelum menyimpan
                 if ($beforeSave) {
                     $beforeSave($record, $this);
                 }
